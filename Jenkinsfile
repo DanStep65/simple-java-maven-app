@@ -1,25 +1,20 @@
-pipeline {
-    agent {
-        docker {
-            image 'maven:3.9.0'
-            args '-v /root/.m2:/root/.m2'
+node { 
+    docker.image('maven:3.9.0').inside('-v /root/.m2:/root/.m2') {
+        stage('Build') { 
+            sh 'mvn -B -DskipTests clean package'
         }
-    }
-    stages {
-        stage('Build') {
-            steps {
-                sh 'mvn -B -DskipTests clean package'
-            }
-        }
-        stage('Test') {
-            steps {
+        try{
+            stage('Test') {
                 sh 'mvn test'
             }
-            post {
-                always {
-                    junit 'target/surefire-reports/*.xml'
-                }
-            }
         }
+        catch (e){
+            echo 'The whole scenario has failed to function properly.'
+            throw e
+        }
+        finally{
+            junit 'target/surefire-reports/*.xml'
+        }
+
     }
 }
